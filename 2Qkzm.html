@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>筋トレToDoリスト（今日のメニュー選択式）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: #f3f4f8;
+      font-family: sans-serif;
+      color: #222;
+      transition: background 0.3s, color 0.3s;
+    }
+    .main-flex {
+      display: flex;
+      max-width: 800px;
+      margin: 40px auto;
+      min-height: 600px;
+    }
+    .sidebar {
+      width: 160px;
+      background: #e0e4f8;
+      border-radius: 16px 0 0 16px;
+      padding: 24px 0 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 0 4px 16px #0001;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 1.1em;
+      padding: 18px 0;
+      margin: 0 0 8px 0;
+      cursor: pointer;
+      color: #444;
+      border-left: 6px solid transparent;
+      transition: background 0.2s, color 0.2s, border 0.2s;
+      text-align: left;
+      width: 100%;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: #4b47e6;
+      border-left: 6px solid #4b47e6;
+      font-weight: bold;
+    }
+    .container {
+      flex: 1;
+      background: #fff;
+      border-radius: 0 16px 16px 0;
+      box-shadow: 0 4px 16px #0001;
+      padding: 32px 24px;
+      min-width: 350px;
+      min-height: 600px;
+      position: relative;
+    }
+    .title {
+      font-size: 1.7em;
+      font-weight: bold;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .todo-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .todo-item {
+      display: flex;
+      flex-direction: column;
+      background: #f7f7fa;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      padding: 24px 20px;
+      font-size: 1.3em;
+      box-shadow: 0 2px 8px #0001;
+      transition: background 0.3s, color 0.3s;
+      position: relative;
+      padding: 14px 8px;
+      font-size: 1em;
+      margin-bottom: 14px;
+    }
+    .todo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .todo-name {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .done {
+      background: #d0e6d0 !important;
+      color: #888 !important;
+      text-decoration: line-through;
+    }
+    .done-btn, .undo-btn, .edit-btn, .save-btn, .cancel-btn, .remove-btn {
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-left: 10px;
+    }
+    .done-btn[disabled] {
+      background: #bdbdbd;
+      color: #fff;
+      cursor: default;
+    }
+    .undo-btn {
+      background: #ff9800;
+    }
+    .undo-btn:hover {
+      background: #e65100;
+    }
+    .done-btn:hover {
+      background: #357a38;
+    }
+    .edit-btn {
+      background: #2196f3;
+      margin-left: 0;
+    }
+    .edit-btn:hover {
+      background: #1565c0;
+    }
+    .save-btn {
+      background: #2196f3;
+    }
+    .save-btn:hover {
+      background: #1565c0;
+    }
+    .cancel-btn {
+      background: #e57373;
+    }
+    .cancel-btn:hover {
+      background: #c62828;
+    }
+    .remove-btn {
+      background: #e57373;
+    }
+    .remove-btn:hover {
+      background: #c62828;
+    }
+    .video-url-label, .memo-label {
+      font-size: 0.9em;
+      margin-top: 8px;
+      color: #666;
+    }
+    .video-url-input, .memo-area {
+      width: 100%;
+      font-size: 1em;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      margin-bottom: 8px;
+      margin-top: 2px;
+    }
+    .memo-area {
+      min-height: 48px;
+      resize: vertical;
+    }
+    .video-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.95em;
+      color: #1976d2;
+      word-break: break-all;
+      text-decoration: underline;
+    }
+    .rest {
+      text-align: center;
+      font-size: 1.2em;
+      color: #888;
+      margin-top: 32px;
+    }
+    .reset-btn {
+      display: block;
+      margin: 0 auto 18px auto;
+      background: #e57373;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    .reset-btn:hover {
+      background: #c62828;
+    }
+    .add-menu-form {
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+    .add-menu-select {
+      font-size: 1em;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      margin-right: 8px;
+      width: 100%;
+      margin: 0;
+    }
+    .add-menu-btn {
+      background: #2196f3;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      margin: 0;
+    }
+    .add-menu-btn:hover {
+      background: #1565c0;
+    }
+    /* 継続日数表示 */
+    .streak-box {
+      position: fixed;
+      top: 18px;
+      right: 24px;
+      background: #fff;
+      color: #222;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0002;
+      padding: 4px 14px;      /* 小さく */
+      font-size: 0.95em;      /* 小さく */
+      font-weight: bold;
+      z-index: 100;
+      letter-spacing: 0.05em;
+      transition: background 0.3s, color 0.3s;
+      margin: 0;              /* 余白リセット */
+      width: auto;            /* 幅を自動 */
+      box-sizing: border-box;
+      text-align: center;
+    }
+    body.dark .streak-box {
+      background: #23232b;
+      color: #fff;
+      box-shadow: 0 2px 8px #0008;
+    }
+    /* ダークモード */
+    body.dark {
+      background: #23232b;
+      color: #fff; 
+    }
+    body.dark .sidebar {
+      background: #23232b;
+      color: #fff; /* サイドバーの文字も白 */
+    }
+    body.dark .tab-btn {
+      color: #fff; /* タブの文字も白 */
+      background: none;
+    }
+    body.dark .tab-btn.active {
+      background: #353545;
+      color: #4b8be6; /* アクティブタブも白 */
+      border-left: 6px solid #4b8be6;
+    }
+    body.dark .container {
+      background: #2d2d3a;
+      color: #fff; /* メインコンテンツの文字も白 */
+    }
+    body.dark .todo-item {
+      background: #353545;
+      color: #fff; /* ToDo項目の文字も白 */
+    }
+    body.dark .video-url-label,
+    body.dark .memo-label {
+      color: #fff; /* ラベルも白 */
+    }
+    body.dark .done {
+      background: #3a4d3a !important;
+      color: #ccc !important;
+    }
+    body.dark .video-link {
+      color: #90caf9;
+    }
+    body.dark .rest {
+      color: #fff;
+    }
+    body.dark .weight-label,
+    body.dark .weight-label span {
+      color: #fff !important;
+    }
+    .toggle-mode {
+      position: fixed;
+      top: 18px;
+      left: 24px;
+      background: #222;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 12px;   
+      cursor: pointer;
+      font-size: 0.95em;     
+      transition: background 0.2s;
+      z-index: 101;
+      margin: 0;              /* ← 余白リセット */
+      width: auto;            /* ← 幅を自動 */
+      box-sizing: border-box;
+      display: block;
+      text-align: center;
+    }
+    body.dark .toggle-mode {
+      background: #fff;
+      color: #222;
+    }
+    /* スマホ時は大きく中央寄せする */
+    @media (max-width: 700px) {
+      .toggle-mode {
+        position: static;
+        margin: 8px auto 0 auto;
+        width: 95vw;
+        box-sizing: border-box;
+        font-size: 1em;
+        display: block;
+        padding: 8px 18px;
+      }
+    }
+    @media (max-width: 700px) {
+      .main-flex {
+        flex-direction: column;
+        min-width: 0;
+        width: 100vw;
+        margin: 0;
+      }
+      .sidebar {
+        flex-direction: row;
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+        padding: 0 0 0 0;
+        box-shadow: none;
+        justify-content: center;
+        min-width: 0;
+      }
+      .tab-btn {
+        border-left: none;
+        border-top: 6px solid transparent;
+        border-radius: 0;
+        padding: 12px 0;
+        margin: 0 8px 0 0;
+        width: auto;
+        min-width: 70px;
+        text-align: center;
+        font-size: 1em;
+      }
+      .tab-btn.active {
+        border-left: none;
+        border-top: 6px solid #4b47e6;
+        background: #fff;
+      }
+      .container {
+        border-radius: 0 0 16px 16px;
+        min-width: 0;
+        width: 100vw;
+        padding: 18px 6px;
+        min-height: 0;
+      }
+      .add-menu-form {
+        flex-direction: column;
+        gap: 6px;
+        align-items: stretch;
+        margin-bottom: 12px;
+      }
+      .add-menu-select, .add-menu-btn {
+        width: 100%;
+        margin: 0;
+        font-size: 1em;
+      }
+      .todo-list {
+        padding: 0;
+      }
+      .todo-item {
+        padding: 14px 8px;
+        font-size: 1em;
+        margin-bottom: 14px;
+      }
+      .todo-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .streak-box {
+        position: static;
+        margin: 8px auto 0 auto;
+        width: 95vw;
+        box-sizing: border-box;
+        font-size: 1em;
+        text-align: center;
+      }
+      .toggle-mode {
+        position: static;
+        margin: 8px auto 0 auto;
+        width: 95vw;
+        box-sizing: border-box;
+        font-size: 1em;
+        display: block;
+      }
+      .reset-btn {
+        width: 100%;
+        margin-bottom: 12px;
+      }
+      .video-url-input, .memo-area, .weight-input {
+        font-size: 1em;
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+
+    /* 小さい端末向けのやつ */
+    @media (max-width: 400px) {
+      .container, .streak-box, .toggle-mode {
+        padding: 6px 2px;
+        width: 99vw;
+      }
+      .todo-item {
+        padding: 8px 2px;
+        font-size: 0.95em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="streak-box" id="streakBox">継続日数: 0日</div>
+  <button class="toggle-mode" id="toggleModeBtn">ダークモード</button>
+  <div class="main-flex">
+    <nav class="sidebar" id="sidebarTabs">
+
+
+      
+    </nav>
+    <div class="container">
+      <div class="title" id="todayTitle"></div>
+      <form class="add-menu-form" id="addMenuForm" style="display:none;">
+        <select class="add-menu-select" id="addMenuSelect">
+          <option value="">トレーニングを選択</option>
+        </select>
+        <button type="submit" class="add-menu-btn">追加</button>
+      </form>
+      <ul class="todo-list" id="todoList"></ul>
+      <div class="rest" id="restMsg" style="display:none;">今日のメニューを選んでね</div>
+    </div>
+  </div>
+  <script>
+    // 種目リスト
+    const allTrainings = [
+      "胸筋",
+      "足",
+      "腹筋",
+      "腕",
+      "背筋",
+      "前腕"
+    ];
+
+    // タブリスト（今日のメニュー＋各種目）
+    const tabList = [
+      { type: "today", label: "今日のメニュー" },
+      ...allTrainings.map(name => ({
+        type: "training",
+        name,
+        label: name
+      }))
+    ];
+
+    // タブ状態
+    let currentTab = "today"; // デフォルトは今日のメニュー
+
+    const todayTitle = document.getElementById('todayTitle');
+    const todoList = document.getElementById('todoList');
+    const restMsg = document.getElementById('restMsg');
+    const streakBox = document.getElementById('streakBox');
+    const sidebarTabs = document.getElementById('sidebarTabs');
+    const addMenuForm = document.getElementById('addMenuForm');
+    const addMenuSelect = document.getElementById('addMenuSelect');
+
+    // localStorageキー
+    function getStorageKey(key) {
+      return "training_todo_" + key;
+    }
+    // メモ・URLのキーは「種目名」だけで統一し、どのタブからも同じものを参照・保存
+    function getMemoKey(name) {
+      return `training_memo_${name}`;
+    }
+    function getUrlKey(name) {
+      return `training_url_${name}`;
+    }
+
+    // 継続日数管理
+    const STREAK_KEY = "training_streak";
+    const LAST_DONE_KEY = "training_last_done";
+
+    // 編集状態を管理（key+種目名: true/false）
+    let editState = {};
+
+    // タスク取得
+    function getTasks(key, tasksArr) {
+      const saved = localStorage.getItem(getStorageKey(key));
+      if (saved) {
+        return JSON.parse(saved);
+      } else {
+        // 初回は未完了状態でセット
+        return (tasksArr || []).map(name => ({ name, done: false }));
+      }
+    }
+
+    function saveTasks(key, tasks) {
+      localStorage.setItem(getStorageKey(key), JSON.stringify(tasks));
+    }
+
+    // 継続日数の取得・表示
+    function getStreak() {
+      return parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
+    }
+    function setStreak(n) {
+      localStorage.setItem(STREAK_KEY, n);
+    }
+    function getLastDoneDate() {
+      return localStorage.getItem(LAST_DONE_KEY) || "";
+    }
+    function setLastDoneDate(dateStr) {
+      localStorage.setItem(LAST_DONE_KEY, dateStr);
+    }
+    function updateStreakDisplay() {
+      streakBox.textContent = `継続日数: ${getStreak()}日`;
+    }
+
+    // すべて完了したかチェック
+    function checkAndUpdateStreak() {
+      const todayTasks = getTasks("today");
+      const allDone = todayTasks.length > 0 && todayTasks.every(t => t.done);
+      const todayStr = (new Date()).toLocaleDateString();
+      const lastDone = getLastDoneDate();
+      let streak = getStreak();
+
+      if (allDone && lastDone !== todayStr) {
+        // 連続日数の更新
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString();
+        if (lastDone === yesterdayStr) {
+          streak += 1;
+        } else {
+          streak = 1;
+        }
+        setStreak(streak);
+        setLastDoneDate(todayStr);
+        updateStreakDisplay();
+      } else if (!allDone && lastDone === todayStr) {
+        // 取り消しで未完了に戻した場合、今日分を減らす
+        setStreak(Math.max(0, streak - 1));
+        setLastDoneDate(""); // 今日分をリセット
+        updateStreakDisplay();
+      }
+    }
+
+    // サイドバータブ生成
+    function renderTabs() {
+      sidebarTabs.innerHTML = '';
+      tabList.forEach(tab => {
+        let tabKey = "";
+        if (tab.type === "today") tabKey = "today";
+        else if (tab.type === "training") tabKey = "training_" + tab.name;
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn' + (currentTab === tabKey ? ' active' : '');
+        btn.textContent = tab.label;
+        btn.onclick = () => {
+          currentTab = tabKey;
+          render();
+        };
+        sidebarTabs.appendChild(btn);
+      });
+    }
+
+    function render() {
+      renderTabs();
+      todoList.innerHTML = '';
+      let tasks = [];
+      let title = "";
+      let key = "";
+      let isTodayMenu = false;
+
+      if (currentTab === "today") {
+        key = "today";
+        tasks = getTasks(key);
+        title = "今日のメニュー";
+        isTodayMenu = true;
+        addMenuForm.style.display = "";
+        addMenuSelect.innerHTML = `<option value="">トレーニングを選択</option>`;
+        allTrainings.forEach(name => {
+          if (!tasks.some(t => t.name === name)) {
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            addMenuSelect.appendChild(opt);
+          }
+        });
+      } else if (currentTab.startsWith("training_")) {
+        key = currentTab.replace("training_", "");
+        tasks = getTasks(key, [key]);
+        title = key;
+        addMenuForm.style.display = "none";
+      }
+
+      todayTitle.textContent = title;
+
+      if (tasks.length === 0) {
+        restMsg.style.display = '';
+        todoList.style.display = 'none';
+      } else {
+        restMsg.style.display = 'none';
+        todoList.style.display = '';
+        tasks.forEach((task, i) => {
+          const li = document.createElement('li');
+          li.className = 'todo-item';
+          if (task.done) li.classList.add('done');
+
+          // メモとURLの保存値取得（種目名で統一）
+          const memoKey = getMemoKey(task.name);
+          const urlKey = getUrlKey(task.name);
+          // 重量の保存・取得キーを追加
+          const weightKey = `training_weight_${task.name}`;
+          const savedMemo = localStorage.getItem(memoKey) || "";
+          const savedUrl = localStorage.getItem(urlKey) || "";
+          const savedWeight = localStorage.getItem(weightKey) || "";
+
+          const editKey = (key || task.name) + "_" + task.name;
+          const isEdit = !!editState[editKey];
+
+          if (!isEdit) {
+            li.innerHTML = `
+              <div class="todo-header">
+                <span class="todo-name">${task.name}</span>
+                <div>
+                  <button class="done-btn"${task.done ? ' disabled' : ''}>完了</button>
+                  ${task.done ? '<button class="undo-btn">取り消し</button>' : ''}
+                  <button class="edit-btn">編集</button>
+                  ${isTodayMenu ? '<button class="remove-btn">削除</button>' : ''}
+                </div>
+              </div>
+              <div class="video-url-label">動画URL:
+                ${savedUrl
+                  ? `<a class="video-link" href="${savedUrl}" target="_blank">${savedUrl}</a>`
+                  : '<span style="color:#aaa;">未登録</span>'}
+              </div>
+              <div class="weight-label" style="font-size:0.9em;margin-top:8px;color:#666;">重量:
+                <span style="min-width:40px;display:inline-block;">${savedWeight ? savedWeight : '<span style="color:#aaa;">未記入</span>'}</span>
+              </div>
+              <label class="memo-label">メモ:
+                <div style="min-height:32px;white-space:pre-wrap;">${savedMemo ? savedMemo : '<span style="color:#aaa;">未記入</span>'}</div>
+              </label>
+            `;
+            // 完了・取り消しボタン
+            const doneBtn = li.querySelector('.done-btn');
+            doneBtn.onclick = () => {
+              if (!task.done) {
+                task.done = true;
+                tasks[i] = task;
+                saveTasks(key, tasks);
+                if (isTodayMenu) checkAndUpdateStreak();
+                render();
+              }
+            };
+            if (task.done) {
+              const undoBtn = li.querySelector('.undo-btn');
+              undoBtn.onclick = () => {
+                task.done = false;
+                tasks[i] = task;
+                saveTasks(key, tasks);
+                if (isTodayMenu) checkAndUpdateStreak();
+                render();
+              };
+            }
+            // 編集ボタン
+            const editBtn = li.querySelector('.edit-btn');
+            editBtn.onclick = () => {
+              editState[editKey] = true;
+              render();
+            };
+            // 削除ボタン（今日のメニューのみ）
+            if (isTodayMenu) {
+              const removeBtn = li.querySelector('.remove-btn');
+              removeBtn.onclick = () => {
+                tasks.splice(i, 1);
+                saveTasks(key, tasks);
+                render();
+              };
+            }
+          } else {
+            // 編集モード
+            li.innerHTML = `
+              <div class="todo-header">
+                <span class="todo-name">${task.name}</span>
+                <div>
+                  <button class="save-btn">保存</button>
+                  <button class="cancel-btn">キャンセル</button>
+                </div>
+              </div>
+              <label class="video-url-label">動画URL:
+                <input type="text" class="video-url-input" value="${savedUrl}">
+              </label>
+              <label class="weight-label" style="font-size:0.9em;margin-top:8px;color:#666;">重量:
+                <input type="text" class="weight-input" value="${savedWeight}" style="width:80px;">
+              </label>
+              <label class="memo-label">メモ:
+                <textarea class="memo-area">${savedMemo}</textarea>
+              </label>
+            `;
+            // 保存ボタン
+            const saveBtn = li.querySelector('.save-btn');
+            const memoArea = li.querySelector('.memo-area');
+            const urlInput = li.querySelector('.video-url-input');
+            const weightInput = li.querySelector('.weight-input');
+            saveBtn.onclick = () => {
+              localStorage.setItem(memoKey, memoArea.value);
+              localStorage.setItem(urlKey, urlInput.value);
+              localStorage.setItem(weightKey, weightInput.value);
+              editState[editKey] = false;
+              render();
+            };
+            // キャンセルボタン
+            const cancelBtn = li.querySelector('.cancel-btn');
+            cancelBtn.onclick = () => {
+              editState[editKey] = false;
+              render();
+            };
+          }
+
+          todoList.appendChild(li);
+        });
+      }
+      updateStreakDisplay();
+    }
+
+    // 今日のメニュー追加フォーム
+    addMenuForm.onsubmit = (e) => {
+      e.preventDefault();
+      const selected = addMenuSelect.value;
+      if (!selected) return;
+      let tasks = getTasks("today");
+      if (!tasks.some(t => t.name === selected)) {
+        tasks.push({ name: selected, done: false });
+        saveTasks("today", tasks);
+        render();
+      }
+      addMenuSelect.value = "";
+    };
+
+    // ダークモード切り替え
+    const toggleBtn = document.getElementById('toggleModeBtn');
+    toggleBtn.onclick = () => {
+      document.body.classList.toggle('dark');
+      toggleBtn.textContent = document.body.classList.contains('dark') ? "ライトモード" : "ダークモード";
+    };
+
+    // 初回 streak 表示
+    updateStreakDisplay();
+
+    render();
+  </script>
+</body>
+</html>
